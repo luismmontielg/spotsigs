@@ -1,8 +1,10 @@
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -28,7 +30,7 @@ public class SpotSigsIndexer {
 
   public static int bufferedReadSize = 64 * 1024 * 1024;
 
-  public static int maxThreads = 2;
+  public static int maxThreads = 8;
 
   public static ArrayList<Counter> counters1, counters2;
 
@@ -68,17 +70,18 @@ public class SpotSigsIndexer {
   public void work() throws Exception {
     SpotSigsProcessor thread;
     int idx = 0, i = SpotSigs.minSpotSigs, last = i;
+    SpotSigs.Partition partition;
     if (MODE.equals("SPOTSIGS")) {
       ArrayList<SpotSigs.Partition> p_temp = new ArrayList<SpotSigs.Partition>();
       for (i = SpotSigs.minSpotSigs; i <= SpotSigs.range; i++) {
         if (i - last > (1 - SpotSigs.confidenceThreshold) * i) {
-          SpotSigs.Partition partition = new SpotSigs.Partition(idx, last, i);
+          partition = new SpotSigs.Partition(idx, last, i);
           p_temp.add(partition);
           last = i + 1;
           idx++;
         }
       }
-      SpotSigs.Partition partition = new SpotSigs.Partition(idx, last,
+      partition = new SpotSigs.Partition(idx, last,
           Integer.MAX_VALUE);
       p_temp.add(partition);
       SpotSigs.partitions = new SpotSigs.Partition[p_temp.size()];
@@ -105,6 +108,18 @@ public class SpotSigsIndexer {
     System.out.println((dedupTime - filterTime) + "\t MS FOR SORTING/HASHING.");
     System.out.println((finishTime - dedupTime) + "\t MS FOR DEDUPLICATION.");
 
+    System.out.println("\n"+ SpotSigs.dups.size() +" Duplicate documents:");
+    BufferedWriter writer = new BufferedWriter(new FileWriter(SpotSigs.dupsFile));
+    for (String doc : SpotSigs.dups){
+    	System.out.println(doc);
+    	writer.append(doc+"\n");
+    }
+    writer.close();
+    
+    writer = new BufferedWriter(new FileWriter(SpotSigs.resultsFile, true));
+    writer.append(SpotSigs.caseName+","+(filterTime-parseTime)+","+(dedupTime-filterTime)+","+(finishTime-dedupTime)+","+SpotSigs.dups.size()+"\n");
+    writer.close();
+    
     System.exit(0);
   }
 
@@ -146,16 +161,31 @@ public class SpotSigsIndexer {
       SpotSigs.minIdf = Double.parseDouble(args[3]);
       System.out.println("minIdf=" + SpotSigs.minIdf);
     } catch (Exception e) {
+    	try {
+    	      SpotSigs.dupsFile = args[3];
+    	      System.out.println("dumping duplicates to dupsFile = " + SpotSigs.dupsFile);
+    	    } catch (Exception ex) {
+    	    }
     }
     try {
       SpotSigs.maxIdf = Double.parseDouble(args[4]);
       System.out.println("maxIdf=" + SpotSigs.maxIdf);
     } catch (Exception e) {
+    	try {
+  	      SpotSigs.caseName = args[4];
+  	      System.out.println("Case name = " + SpotSigs.caseName);
+  	    } catch (Exception ex) {
+  	    }
     }
     try {
       SpotSigs.confidenceThreshold = Double.parseDouble(args[5]);
       System.out.println("conf=" + SpotSigs.confidenceThreshold);
     } catch (Exception e) {
+    	try {
+    	      SpotSigs.resultsFile = args[5];
+    	      System.out.println("results file = " + SpotSigs.resultsFile);
+    	    } catch (Exception ex) {
+    	    }
     }
     try {
       SpotSigs.k = Integer.parseInt(args[6]);
@@ -248,6 +278,9 @@ public class SpotSigsIndexer {
       SpotSigsIndexer.FORMAT = in.readLine().trim();
 
       SpotSigs.duplicates = new HashSet<Counter>(1000000);
+      
+      SpotSigs.uniques = new HashSet<String>(1000000);
+      SpotSigs.dups = new HashSet<String>(1000000);
 
       SpotSigs.partitions = new SpotSigs.Partition[1];
       SpotSigs.stopwords = new HashSet<String>();
@@ -432,6 +465,11 @@ public class SpotSigsIndexer {
             synchronized (counters2) {
               counters2.add(counter);
             }
+          }
+          else{
+        	  synchronized (SpotSigs.uniques) {
+        		  SpotSigs.uniques.add(counter.docid);
+        	  }  
           }
         }
       }

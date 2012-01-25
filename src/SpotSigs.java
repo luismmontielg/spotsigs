@@ -18,6 +18,10 @@ public class SpotSigs {
   public static int dupsFound = 0, chains, minSpotSigs, range, allspots = 0,
       k = 6, l = 32;
 
+  public static String dupsFile = "spotsigs_duplicates.txt";
+  public static String resultsFile = "spotsigs_results.csv";
+  public static String caseName = "No_name";
+  
   public static double minIdf = 0.2, maxIdf = 0.85;
 
   public static HashMap<String, Integer> beadPositions;
@@ -29,6 +33,9 @@ public class SpotSigs {
   public static Partition[] partitions;
 
   public static HashSet<Counter> duplicates;
+  
+  public static HashSet<String> uniques;
+  public static HashSet<String> dups;
 
   public static HashSet<String> stopwords;
 
@@ -432,6 +439,16 @@ public class SpotSigs {
                 SpotSigs.duplicates.add(counter);
                 SpotSigs.duplicates.add(counter2);
               }
+              
+              synchronized (SpotSigs.uniques) {
+            	  if (!SpotSigs.uniques.contains(counter2.docid)) {
+            		  SpotSigs.uniques.add(counter.docid);
+            		  synchronized (SpotSigs.dups) {
+            			  SpotSigs.dups.add(counter2.docid);
+            		  }
+            	  }
+              }
+              
               System.out.println(counter.docid + "\t" + counter2.docid + "\t"
                   + String.valueOf(sim));
             }
