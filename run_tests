@@ -1,0 +1,275 @@
+#!/bin/bash
+
+export INIT_DATE=`date`
+
+export BASE_DIR=/Users/luismmontielg/usa_jobs
+export JOBS_DIR=$BASE_DIR/jobs_tmp
+export SPOTSIGS_DIR=/Users/luismmontielg/Documents/spotsigs-workspace/SpotSigs
+export SPOTSIGS_CONFIG_DIR=/Users/luismmontielg/Documents/spotsigs-workspace/SpotSigs/configs
+export COLT_JAR_DIR=/Users/luismmontielg/Downloads/colt/lib
+export RESULTS_FILE=$BASE_DIR/results.csv
+export BACKUP_SUFFIX="_`date +%F`"
+export FILTERED_JOBS_DIR=$BASE_DIR/jobs_filtered
+
+mkdir $FILTERED_JOBS_DIR
+
+function create_results_file {
+  cp $RESULTS_FILE "$RESULTS_FILE""$BACKUP_SUFFIX"
+  echo "T_1-threshold=0.80,IDF_A=0.20 - 0.85(Amplio)" > $RESULTS_FILE
+  echo "T_2-threshold=0.85,IDF_M=0.30 - 0.80(Medio)" >> $RESULTS_FILE
+  echo "T_2-threshold=0.90,IDF_C=0.40 - 0.75(Chico)" >> $RESULTS_FILE
+  echo "CL_1=Chain length=1,CL_2=Chain length=2" >> $RESULTS_FILE
+  echo "ANT_1=Spot distance=1,ANT_2=Spot distance=2" >> $RESULTS_FILE
+
+  echo "Case_name,Parsing(ms),Sorting/hashing(ms),deduplication(ms),duplicate_jobs" >> $RESULTS_FILE
+}
+
+function filter_duplicates {
+  cp -aR $2/ $BASE_DIR/jobs_bk
+  while read line; do
+      rm "$line"
+  done < "$1"
+  rm -rf $3
+  mv $2 $3
+  mv $BASE_DIR/jobs_bk $2
+}
+
+function run_case {
+  JOB_SIZE=$1
+  RUN_NAME=$2
+
+  rm -rf $JOBS_DIR
+  cp -aR $BASE_DIR/jobs_"$JOB_SIZE" $JOBS_DIR
+
+  CASE_NAME="$JOB_SIZE"_"$RUN_NAME"
+  OUTPUT_FILE="$BASE_DIR"/outputs/"$CASE_NAME"_output
+  DUPS_FILE=$BASE_DIR/spotsigs_dups.txt
+  FILTERED_DIR="$FILTERED_JOBS_DIR"/jobs_"$JOB_SIZE"_"$RUN_NAME"_filtered
+
+  java -Xmx1024m -cp .:$SPOTSIGS_DIR/bin/:$COLT_JAR_DIR/colt.jar SpotSigsIndexer $JOBS_DIR $SPOTSIGS_CONFIG_DIR/$RUN_NAME.config $JOB_SIZE $DUPS_FILE $CASE_NAME $RESULTS_FILE 2>&1 | tee $OUTPUT_FILE
+  filter_duplicates "$DUPS_FILE" "$JOBS_DIR" "$FILTERED_DIR"
+}
+
+# uncomment to create/overwrite csv file
+create_results_file
+
+# start running cases
+
+
+# 100 jobs
+# Threshold 1
+run_case 100 T_1_IDF_A_CL_1_ANT_1
+run_case 100 T_1_IDF_A_CL_1_ANT_2
+#
+run_case 100 T_1_IDF_A_CL_2_ANT_1
+run_case 100 T_1_IDF_A_CL_2_ANT_2
+###
+
+run_case 100 T_1_IDF_M_CL_1_ANT_1
+run_case 100 T_1_IDF_M_CL_1_ANT_2
+#
+run_case 100 T_1_IDF_M_CL_2_ANT_1
+run_case 100 T_1_IDF_M_CL_2_ANT_2
+###
+
+run_case 100 T_1_IDF_C_CL_1_ANT_1
+run_case 100 T_1_IDF_C_CL_1_ANT_2
+#
+run_case 100 T_1_IDF_C_CL_2_ANT_1
+run_case 100 T_1_IDF_C_CL_2_ANT_2
+###
+#### ####
+# Threshold 2
+run_case 100 T_2_IDF_A_CL_1_ANT_1
+run_case 100 T_2_IDF_A_CL_1_ANT_2
+#
+run_case 100 T_2_IDF_A_CL_2_ANT_1
+run_case 100 T_2_IDF_A_CL_2_ANT_2
+###
+
+run_case 100 T_2_IDF_M_CL_1_ANT_1
+run_case 100 T_2_IDF_M_CL_1_ANT_2
+#
+run_case 100 T_2_IDF_M_CL_2_ANT_1
+run_case 100 T_2_IDF_M_CL_2_ANT_2
+###
+
+run_case 100 T_2_IDF_C_CL_1_ANT_1
+run_case 100 T_2_IDF_C_CL_1_ANT_2
+#
+run_case 100 T_2_IDF_C_CL_2_ANT_1
+run_case 100 T_2_IDF_C_CL_2_ANT_2
+###
+#### ####
+
+
+# Threshold 3
+run_case 100 T_3_IDF_A_CL_1_ANT_1
+run_case 100 T_3_IDF_A_CL_1_ANT_2
+#
+run_case 100 T_3_IDF_A_CL_2_ANT_1
+run_case 100 T_3_IDF_A_CL_2_ANT_2
+###
+
+run_case 100 T_3_IDF_M_CL_1_ANT_1
+run_case 100 T_3_IDF_M_CL_1_ANT_2
+#
+run_case 100 T_3_IDF_M_CL_2_ANT_1
+run_case 100 T_3_IDF_M_CL_2_ANT_2
+###
+run_case 100 T_3_IDF_C_CL_1_ANT_1
+run_case 100 T_3_IDF_C_CL_1_ANT_2
+#
+run_case 100 T_3_IDF_C_CL_2_ANT_1
+run_case 100 T_3_IDF_C_CL_2_ANT_2
+###
+#### ####
+
+#### #### ####
+
+# 1000 jobs
+# Threshold 1
+run_case 1000 T_1_IDF_A_CL_1_ANT_1
+run_case 1000 T_1_IDF_A_CL_1_ANT_2
+#
+run_case 1000 T_1_IDF_A_CL_2_ANT_1
+run_case 1000 T_1_IDF_A_CL_2_ANT_2
+###
+
+run_case 1000 T_1_IDF_M_CL_1_ANT_1
+run_case 1000 T_1_IDF_M_CL_1_ANT_2
+#
+run_case 1000 T_1_IDF_M_CL_2_ANT_1
+run_case 1000 T_1_IDF_M_CL_2_ANT_2
+###
+
+run_case 1000 T_1_IDF_C_CL_1_ANT_1
+run_case 1000 T_1_IDF_C_CL_1_ANT_2
+#
+run_case 1000 T_1_IDF_C_CL_2_ANT_1
+run_case 1000 T_1_IDF_C_CL_2_ANT_2
+###
+#### ####
+# Threshold 2
+run_case 1000 T_2_IDF_A_CL_1_ANT_1
+run_case 1000 T_2_IDF_A_CL_1_ANT_2
+#
+run_case 1000 T_2_IDF_A_CL_2_ANT_1
+run_case 1000 T_2_IDF_A_CL_2_ANT_2
+###
+
+run_case 1000 T_2_IDF_M_CL_1_ANT_1
+run_case 1000 T_2_IDF_M_CL_1_ANT_2
+#
+run_case 1000 T_2_IDF_M_CL_2_ANT_1
+run_case 1000 T_2_IDF_M_CL_2_ANT_2
+###
+
+run_case 1000 T_2_IDF_C_CL_1_ANT_1
+run_case 1000 T_2_IDF_C_CL_1_ANT_2
+#
+run_case 1000 T_2_IDF_C_CL_2_ANT_1
+run_case 1000 T_2_IDF_C_CL_2_ANT_2
+###
+#### ####
+
+
+# Threshold 3
+run_case 1000 T_3_IDF_A_CL_1_ANT_1
+run_case 1000 T_3_IDF_A_CL_1_ANT_2
+#
+run_case 1000 T_3_IDF_A_CL_2_ANT_1
+run_case 1000 T_3_IDF_A_CL_2_ANT_2
+###
+
+run_case 1000 T_3_IDF_M_CL_1_ANT_1
+run_case 1000 T_3_IDF_M_CL_1_ANT_2
+#
+run_case 1000 T_3_IDF_M_CL_2_ANT_1
+run_case 1000 T_3_IDF_M_CL_2_ANT_2
+###
+run_case 1000 T_3_IDF_C_CL_1_ANT_1
+run_case 1000 T_3_IDF_C_CL_1_ANT_2
+#
+run_case 1000 T_3_IDF_C_CL_2_ANT_1
+run_case 1000 T_3_IDF_C_CL_2_ANT_2
+###
+#### ####
+
+#### #### ####
+
+# 10000 jobs
+# Threshold 1
+run_case 10000 T_1_IDF_A_CL_1_ANT_1
+run_case 10000 T_1_IDF_A_CL_1_ANT_2
+#
+run_case 10000 T_1_IDF_A_CL_2_ANT_1
+run_case 10000 T_1_IDF_A_CL_2_ANT_2
+###
+
+run_case 10000 T_1_IDF_M_CL_1_ANT_1
+run_case 10000 T_1_IDF_M_CL_1_ANT_2
+#
+run_case 10000 T_1_IDF_M_CL_2_ANT_1
+run_case 10000 T_1_IDF_M_CL_2_ANT_2
+###
+
+run_case 10000 T_1_IDF_C_CL_1_ANT_1
+run_case 10000 T_1_IDF_C_CL_1_ANT_2
+#
+run_case 10000 T_1_IDF_C_CL_2_ANT_1
+run_case 10000 T_1_IDF_C_CL_2_ANT_2
+###
+#### ####
+# Threshold 2
+run_case 10000 T_2_IDF_A_CL_1_ANT_1
+run_case 10000 T_2_IDF_A_CL_1_ANT_2
+#
+run_case 10000 T_2_IDF_A_CL_2_ANT_1
+run_case 10000 T_2_IDF_A_CL_2_ANT_2
+###
+
+run_case 10000 T_2_IDF_M_CL_1_ANT_1
+run_case 10000 T_2_IDF_M_CL_1_ANT_2
+#
+run_case 10000 T_2_IDF_M_CL_2_ANT_1
+run_case 10000 T_2_IDF_M_CL_2_ANT_2
+###
+
+run_case 10000 T_2_IDF_C_CL_1_ANT_1
+run_case 10000 T_2_IDF_C_CL_1_ANT_2
+#
+run_case 10000 T_2_IDF_C_CL_2_ANT_1
+run_case 10000 T_2_IDF_C_CL_2_ANT_2
+###
+#### ####
+
+
+# Threshold 3
+run_case 10000 T_3_IDF_A_CL_1_ANT_1
+run_case 10000 T_3_IDF_A_CL_1_ANT_2
+#
+run_case 10000 T_3_IDF_A_CL_2_ANT_1
+run_case 10000 T_3_IDF_A_CL_2_ANT_2
+###
+
+run_case 10000 T_3_IDF_M_CL_1_ANT_1
+run_case 10000 T_3_IDF_M_CL_1_ANT_2
+#
+run_case 10000 T_3_IDF_M_CL_2_ANT_1
+run_case 10000 T_3_IDF_M_CL_2_ANT_2
+###
+run_case 10000 T_3_IDF_C_CL_1_ANT_1
+run_case 10000 T_3_IDF_C_CL_1_ANT_2
+#
+run_case 10000 T_3_IDF_C_CL_2_ANT_1
+run_case 10000 T_3_IDF_C_CL_2_ANT_2
+###
+#### ####
+
+#### #### ####
+
+: <<'COMMENT'
+COMMENT
+echo "start time "$INIT_DATE
+echo "done running tests "`date`
